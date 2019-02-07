@@ -45,20 +45,23 @@ class Test:
         self.TAs = []
 
 class TA:
-    def __init__(self,name,free_list,has_lab=False):
+    def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0):
         self.name = name
         self.free_list = free_list
         self.has_lab = has_lab
         self.restrictivity = len(free_list)
+        self.proctor = proctor
+        self.grade = grade
 
     def CheckFreeList(self,slot):
         return all(elem in self.free_list for elem in LAB_SLOT_TO_TA_SLOT_DICT[slot])
 
 class ScheduleBot:
-    def __init__(self, lab_fname, TA_fname, test_fname, datadir = DEFAULT_DATA_DIR):
-        print('Init new ScheduleBot')
+    def __init__(self, lab_fname, TA_fname, test_fname, tally_fname, datadir = DEFAULT_DATA_DIR):
+        print('\nScheduleBot Initialized')
         self.data_dir = datadir
         self.lab_list = self.CreateLabList(lab_fname)
+        self.TA_hash = self.CreateTAHash(tally_fname)
         self.TA_list = self.CreateTAList(TA_fname)
         self.test_list = self.CreateTestList(test_fname)
 
@@ -81,7 +84,7 @@ class ScheduleBot:
                 for j in range(len(row)):
                     if 'OK' not in row[j]:
                         free_list.append(j)
-                TA_list.append(TA(name,free_list))
+                TA_list.append(TA(name,free_list, proctor=self.TA_hash[name]['proctor'], grade=self.TA_hash[name]['grade']))
         return TA_list
 
     def CreateTestList(self,fname):
@@ -97,7 +100,19 @@ class ScheduleBot:
                 test_list.append(Test(class_n,prof,slot,date,n_students))
         return test_list
 
-    def Schedule(self):
+    def CreateTAHash(self,fname):
+        TA_hash = {}
+        with open(self.data_dir+fname, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter = ',')
+            for row in reader:
+                name = row[0]
+                proctor = int(row[2])+int(row[4])+int(row[6])+int(row[8])
+                grade = int(row[3])+int(row[5])+int(row[7])+int(row[9])
+                TA_hash[name] = {'proctor':proctor,'grade':grade}
+        print(TA_hash)
+        return TA_hash
+
+    def ScheduleLabs(self):
         for lab in self.lab_list:
             min_restrictivity = 100
             lab_slot = lab.slot
@@ -166,8 +181,9 @@ TEST_SLOT_TO_TA_SLOT_DICT = {
 }
 
 if __name__ == '__main__':
-    print('Starting scheduling bot')
+    print('\nStarting scheduling process')
     CreateStudentSlotList()
-    sb = ScheduleBot('lab_list_sp19.csv','master_schedule_sp19.csv', 'proctor_grading_list_sp19.csv')
-    sb.Schedule()
-    sb.PrintAllLabs()
+    sb = ScheduleBot('lab_list_sp19.csv','master_schedule_sp19.csv', 'proctor_grading_list_sp19.csv', 'proctor_grading_tally.csv')
+    #sb.ScheduleLabs()
+    #sb.PrintAllLabs()
+    print('\nScheduling process finished')
