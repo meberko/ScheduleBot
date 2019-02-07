@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 import csv, time
+from random import shuffle
 
 DEFAULT_DATA_DIR = './Data/'
 DAYS = ['M','T','W','R','F']
@@ -42,7 +43,13 @@ class Test:
         self.date = date
         self.slot = slot
         self.num_students = n_students
-        self.TAs = []
+        self.num_proctors = int(2+n_students/100)
+        self.num_graders = int(min(3+n_students/50,5))
+        self.proctors = []
+        self.graders = []
+
+    def PrintTest(self):
+        print(("%d, %s, %s\n\t%s\n\t%s")%(self.class_num,self.professor,self.date,str(self.proctors),str(self.graders)))
 
 class TA:
     def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0):
@@ -53,8 +60,12 @@ class TA:
         self.proctor = proctor
         self.grade = grade
 
-    def CheckFreeList(self,slot):
-        return all(elem in self.free_list for elem in LAB_SLOT_TO_TA_SLOT_DICT[slot])
+    def CheckFreeList(self,slot,lab_or_test):
+        slot_dict = (LAB_SLOT_TO_TA_SLOT_DICT, TEST_SLOT_TO_TA_SLOT_DICT)[lab_or_test=='test']
+        return all(elem in self.free_list for elem in slot_dict[slot])
+
+    def __repr__(self):
+        return self.name
 
 class ScheduleBot:
     def __init__(self, lab_fname, TA_fname, test_fname, tally_fname, datadir = DEFAULT_DATA_DIR):
@@ -82,7 +93,7 @@ class ScheduleBot:
                 free_list = []
                 name = row.pop(0)
                 for j in range(len(row)):
-                    if 'OK' not in row[j]:
+                    if row[j]=='':
                         free_list.append(j)
                 TA_list.append(TA(name,free_list, proctor=self.TA_hash[name]['proctor'], grade=self.TA_hash[name]['grade']))
         return TA_list
@@ -92,12 +103,12 @@ class ScheduleBot:
         with open(self.data_dir+fname, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter = ',')
             for row in reader:
-                class_n = row[0]
+                class_n = int(row[0])
                 prof = row[1]
                 slot = Slot(row[2],row[3].split(', ')[1].split('-')[0], row[3].split(', ')[1].split('-')[1])
                 date = row[3].split(', ')[0]
                 n_students = int(row[4])
-                test_list.append(Test(class_n,prof,slot,date,n_students))
+                test_list.append(Test(class_n,prof,date,slot,n_students))
         return test_list
 
     def CreateTAHash(self,fname):
@@ -109,7 +120,6 @@ class ScheduleBot:
                 proctor = int(row[2])+int(row[4])+int(row[6])+int(row[8])
                 grade = int(row[3])+int(row[5])+int(row[7])+int(row[9])
                 TA_hash[name] = {'proctor':proctor,'grade':grade}
-        print(TA_hash)
         return TA_hash
 
     def ScheduleLabs(self):
@@ -118,15 +128,46 @@ class ScheduleBot:
             lab_slot = lab.slot
             lab_TA = TA('',[])
             for ta in self.TA_list:
-                if ta.CheckFreeList(lab_slot) and ta.restrictivity < min_restrictivity and not ta.has_lab:
+                if ta.CheckFreeList(lab_slot,'lab') and ta.restrictivity < min_restrictivity and not ta.has_lab:
                     min_restrictivity = ta.restrictivity
                     lab_TA = ta
             lab.TA = lab_TA
             lab_TA.has_lab = True
 
+    def ScheduleTests(self):
+        for test in self.test_list:
+            test_slot = test.slot
+            for n in range(test.num_proctors):
+                proctor = TA('',[])
+                min_proctor_restrictivity = 100
+                #shuffle(self.TA_list)
+                for ta in self.TA_list:
+                    if ta.CheckFreeList(test_slot,'test') and ta.proctor < min_proctor_restrictivity and ta not in test.proctors:
+                        proctor = ta
+                        min_proctor_restrictivity = ta.proctor
+                test.proctors.append(proctor)
+                proctor.proctor+=1
+            for n in range(test.num_graders):
+                grader = TA('',[])
+                min_grader_restrictivity = 100
+                for ta in self.TA_list:
+                    if ta.grade < min_grader_restrictivity and ta not in test.graders:
+                        grader = ta
+                        min_grader_restrictivity = ta.grade
+                test.graders.append(grader)
+                grader.grade+=1
+
     def PrintAllLabs(self):
         for lab in self.lab_list:
             lab.PrintLab()
+
+    def PrintAllTests(self):
+        for test in self.test_list:
+            test.PrintTest()
+
+    def PrintAllTAs(self):
+        for ta in self.TA_list:
+            print(ta.name,ta.proctor-self.TA_hash[ta.name]['proctor'],ta.grade-self.TA_hash[ta.name]['grade'])
 
 def CreateStudentSlotList():
     for i in range(TA_SLOT_RANGE):
@@ -186,4 +227,7 @@ if __name__ == '__main__':
     sb = ScheduleBot('lab_list_sp19.csv','master_schedule_sp19.csv', 'proctor_grading_list_sp19.csv', 'proctor_grading_tally.csv')
     #sb.ScheduleLabs()
     #sb.PrintAllLabs()
+    sb.ScheduleTests()
+    sb.PrintAllTests()
+    sb.PrintAllTAs()
     print('\nScheduling process finished')
