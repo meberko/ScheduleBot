@@ -44,7 +44,7 @@ class Test:
         self.slot = slot
         self.num_students = n_students
         self.num_proctors = int(2+n_students/100)
-        self.num_graders = int(min(3+n_students/50,5))
+        self.num_graders = int(min(3+n_students/60,5))
         self.proctors = []
         self.graders = []
 
@@ -157,6 +157,13 @@ class ScheduleBot:
                 test.graders.append(grader)
                 grader.grade+=1
 
+    def WriteTestSchedule(self):
+        with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
+            pgwriter = csv.writer(pgfile, delimiter=',')
+            for test in self.test_list:
+                row = [test.class_num,test.professor,test.date]+test.proctors+['']*(4-len(test.proctors))+test.graders
+                pgwriter.writerow(row)
+
     def PrintAllLabs(self):
         for lab in self.lab_list:
             lab.PrintLab()
@@ -228,6 +235,7 @@ if __name__ == '__main__':
     #sb.ScheduleLabs()
     #sb.PrintAllLabs()
     sb.ScheduleTests()
-    sb.PrintAllTests()
+    sb.WriteTestSchedule()
+    #sb.PrintAllTests()
     sb.PrintAllTAs()
     print('\nScheduling process finished')
