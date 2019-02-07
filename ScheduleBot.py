@@ -9,6 +9,7 @@ DAYS = ['M','T','W','R','F']
 TA_SLOT_RANGE = 65
 TA_SLOT_LIST = []
 
+# Class for time slots (day, start time (24 hr clock), end time (24 hr clock))
 class Slot:
     def __init__(self,day,start,end):
         self.day = day
@@ -26,6 +27,7 @@ class Slot:
     def __hash__(self):
         return hash((self.day,self.start,self.end))
 
+# Class for labs
 class Lab:
     def __init__(self,type,section,slot,TA=''):
         self.type = type
@@ -151,15 +153,17 @@ class ScheduleBot:
                 grader = TA('',[])
                 min_grader_restrictivity = 100
                 for ta in self.TA_list:
-                    if ta.grade < min_grader_restrictivity and ta not in test.graders:
+                    ta_restrictivity = ta.proctor+3*ta.grade
+                    if ta_restrictivity < min_grader_restrictivity and ta not in test.graders:
                         grader = ta
-                        min_grader_restrictivity = ta.grade
+                        min_grader_restrictivity = ta_restrictivity
                 test.graders.append(grader)
                 grader.grade+=1
 
     def WriteTestSchedule(self):
         with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
             pgwriter = csv.writer(pgfile, delimiter=',')
+            pgwriter.writerow(['Class Number','Professor','Midterm Date', 'Proctors','','','','Graders','','','',''])
             for test in self.test_list:
                 row = [test.class_num,test.professor,test.date]+test.proctors+['']*(4-len(test.proctors))+test.graders
                 pgwriter.writerow(row)
@@ -174,7 +178,9 @@ class ScheduleBot:
 
     def PrintAllTAs(self):
         for ta in self.TA_list:
-            print(ta.name,ta.proctor-self.TA_hash[ta.name]['proctor'],ta.grade-self.TA_hash[ta.name]['grade'])
+            proctor_this_sem = ta.proctor-self.TA_hash[ta.name]['proctor']
+            grade_this_sem = ta.grade-self.TA_hash[ta.name]['grade']
+            print(ta.name,proctor_this_sem, grade_this_sem, round(proctor_this_sem+3*grade_this_sem,2))
 
 def CreateStudentSlotList():
     for i in range(TA_SLOT_RANGE):
