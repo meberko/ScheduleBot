@@ -27,7 +27,7 @@ class Slot:
     def __hash__(self):
         return hash((self.day,self.start,self.end))
 
-# Class for labs
+# Class for labs (type, section number, slot, assigned TA)
 class Lab:
     def __init__(self,type,section,slot,TA=''):
         self.type = type
@@ -38,6 +38,7 @@ class Lab:
     def PrintLab(self):
         print(('%s, %d, %s, %s, %s, %s')%(self.type,self.section,self.slot.day,self.slot.start,self.slot.end,self.TA.name))
 
+# Class for tests (class number, professor name, date of test, slot, number of students)
 class Test:
     def __init__(self, class_n, prof, date, slot, n_students):
         self.class_num = class_n
@@ -53,6 +54,7 @@ class Test:
     def PrintTest(self):
         print(("%d, %s, %s\n\t%s\n\t%s")%(self.class_num,self.professor,self.date,str(self.proctors),str(self.graders)))
 
+# Class for TAs (namer of TA, list of free times, has lab boolean, number of times proctored, number of times graded)
 class TA:
     def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0):
         self.name = name
@@ -69,6 +71,7 @@ class TA:
     def __repr__(self):
         return self.name
 
+# Class for ScheduleBot, the bot that does the scheduling (filename for list of labs, filename for list of TA availability, filename for tests, filename for proctor/grade tally sheet)
 class ScheduleBot:
     def __init__(self, lab_fname, TA_fname, test_fname, tally_fname, datadir = DEFAULT_DATA_DIR):
         print('\nScheduleBot Initialized')
@@ -78,6 +81,7 @@ class ScheduleBot:
         self.TA_list = self.CreateTAList(TA_fname)
         self.test_list = self.CreateTestList(test_fname)
 
+    # Creators
     def CreateLabList(self,fname):
         lab_list = []
         with open(self.data_dir+fname, newline='') as csvfile:
@@ -124,6 +128,7 @@ class ScheduleBot:
                 TA_hash[name] = {'proctor':proctor,'grade':grade}
         return TA_hash
 
+    # Schedulers
     def ScheduleLabs(self):
         for lab in self.lab_list:
             min_restrictivity = 100
@@ -160,6 +165,7 @@ class ScheduleBot:
                 test.graders.append(grader)
                 grader.grade+=1
 
+    # Writers
     def WriteTestSchedule(self):
         with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
             pgwriter = csv.writer(pgfile, delimiter=',')
@@ -168,6 +174,7 @@ class ScheduleBot:
                 row = [test.class_num,test.professor,test.date]+test.proctors+['']*(4-len(test.proctors))+test.graders
                 pgwriter.writerow(row)
 
+    # Printers
     def PrintAllLabs(self):
         for lab in self.lab_list:
             lab.PrintLab()
