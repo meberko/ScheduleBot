@@ -21,5 +21,7 @@ Assuming you have
  all you have to do is open up a terminal window and type the following:
 
 `> git clone https://github.com/meberko/ScheduleBot`
+
 `> cp ./ScheduleBot`
+
 `> python3 ZhuLi.py`
