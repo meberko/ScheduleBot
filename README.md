@@ -19,7 +19,7 @@ Assuming you have
 - Python 3 all installed and ready to go (information for Python installations can be found [here](https://www.python.org/downloads/))
 - Necessary data files correctly formatted and in ./Data folder
  all you have to do is open up a terminal window and type the following:
- 
-`> git clone https://github.com/meberko/ScheduleBot
-> cp ./ScheduleBot
-> python3 ZhuLi.py`
+
+`> git clone https://github.com/meberko/ScheduleBot`
+`> cp ./ScheduleBot`
+`> python3 ZhuLi.py`
