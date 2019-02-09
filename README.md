@@ -12,7 +12,7 @@ To ensure ZhuLi works as expected, he will need 4 files from you:
 
 Note that any and all .csv files can be created in Excel and exported as .csv files.
 
-##Software Requirements
+## Software Requirements
 ZhuLi should be run using a distribution of Python 3.x.x. It will not work with Python 2.x.x and, unless you're a coding whiz who wants to go through the mundane process of making ZhuLi Python 2 compatible, I would recommend you stick to Python 3.
 
 Assuming you have
