@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-import csv, time
+import csv, time, sys
 from random import shuffle
 
 DEFAULT_DATA_DIR = './Data/'
@@ -27,16 +27,16 @@ class Slot:
     def __hash__(self):
         return hash((self.day,self.start,self.end))
 
-# Class for labs (type, section number, slot, assigned TA)
+# Class for labs (lab_type, section number, slot, assigned TA)
 class Lab:
-    def __init__(self,type,section,slot,TA=''):
-        self.type = type
+    def __init__(self,lab_type,section,slot,TA=''):
+        self.lab_type = lab_type
         self.section = section
         self.slot = slot
         self.TA = TA
 
     def PrintLab(self):
-        print(('%s, %d, %s, %s, %s, %s')%(self.type,self.section,self.slot.day,self.slot.start,self.slot.end,self.TA.name))
+        print(('%s, %d, %s, %s, %s, %s')%(self.lab_type,self.section,self.slot.day,self.slot.start,self.slot.end,self.TA.name))
 
 # Class for tests (class number, professor name, date of test, slot, number of students)
 class Test:
@@ -169,10 +169,19 @@ class ZhuLi:
     def WriteTestSchedule(self):
         with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
             pgwriter = csv.writer(pgfile, delimiter=',')
-            pgwriter.writerow(['Class Number','Professor','Midterm Date', 'Proctors','','','','Graders','','','',''])
+            pgwriter.writerow(['Class Number','Section Number','Midterm Date', 'Proctors','','','','Graders','','','',''])
             for test in self.test_list:
                 row = [test.class_num,test.professor,test.date]+test.proctors+['']*(4-len(test.proctors))+test.graders
                 pgwriter.writerow(row)
+
+    def WriteLabSchedule(self):
+        with open(DEFAULT_DATA_DIR+'lab_schedule_sp19.csv', mode='w+') as labfile:
+            labwriter = csv.writer(labfile, delimiter=',')
+            labwriter.writerow(['Lab Type','Section Number','TA'])
+            for lab in self.lab_list:
+                row = [lab.lab_type,lab.section,lab.TA.name]
+                labwriter.writerow(row)
+
 
     # Printers
     def PrintAllLabs(self):
@@ -242,17 +251,23 @@ TEST_SLOT_TO_TA_SLOT_DICT = {
 }
 
 if __name__ == '__main__':
-    print('\nStarting scheduling process\n)
+    print('\nStarting scheduling process\n')
+    lab_fname,TA_fname,test_fname,tally_fname = ['']*4
     CreateStudentSlotList()
-    lab_fname = input('Please enter filename for lab list:')
-    TA_fname = input('Please enter filename for TA master schedule:')
-    test_fname = input('Please enter filename for test list:')
-    tally_fname = input('Please enter filename for tally list:')
+    if len(sys.argv)==2  and sys.argv[1] == 'default':
+        lab_fname = 'lab_list_sp19.csv'
+        TA_fname = 'master_schedule_sp19.csv'
+        test_fname = 'proctor_grading_list_sp19.csv'
+        tally_fname = 'proctor_grading_tally_sp19.csv'
+    else:
+        lab_fname = input('Please enter filename for lab list:')
+        TA_fname = input('Please enter filename for TA master schedule:')
+        test_fname = input('Please enter filename for test list:')
+        tally_fname = input('Please enter filename for tally list:')
     sb = ZhuLi(lab_fname,TA_fname,test_fname,tally_fname)
     #sb.ScheduleLabs()
-    #sb.PrintAllLabs()
+    #sb.WriteLabSchedule()
     sb.ScheduleTests()
     sb.WriteTestSchedule()
-    #sb.PrintAllTests()
-    sb.PrintAllTAs()
+    #sb.PrintAllTAs()
     print('\nScheduling process finished')
