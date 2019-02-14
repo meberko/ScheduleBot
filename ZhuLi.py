@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-import csv, time
+import csv, time, sys
 from random import shuffle
 
 DEFAULT_DATA_DIR = './Data/'
@@ -27,17 +27,18 @@ class Slot:
     def __hash__(self):
         return hash((self.day,self.start,self.end))
 
-# Class for labs
+# Class for labs (lab_type, section number, slot, assigned TA)
 class Lab:
-    def __init__(self,type,section,slot,TA=''):
-        self.type = type
+    def __init__(self,lab_type,section,slot,TA=''):
+        self.lab_type = lab_type
         self.section = section
         self.slot = slot
         self.TA = TA
 
     def PrintLab(self):
-        print(('%s, %d, %s, %s, %s, %s')%(self.type,self.section,self.slot.day,self.slot.start,self.slot.end,self.TA.name))
+        print(('%s, %d, %s, %s, %s, %s')%(self.lab_type,self.section,self.slot.day,self.slot.start,self.slot.end,self.TA.name))
 
+# Class for tests (class number, professor name, date of test, slot, number of students)
 class Test:
     def __init__(self, class_n, prof, date, slot, n_students):
         self.class_num = class_n
@@ -53,6 +54,7 @@ class Test:
     def PrintTest(self):
         print(("%d, %s, %s\n\t%s\n\t%s")%(self.class_num,self.professor,self.date,str(self.proctors),str(self.graders)))
 
+# Class for TAs (namer of TA, list of free times, has lab boolean, number of times proctored, number of times graded)
 class TA:
     def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0):
         self.name = name
@@ -69,7 +71,8 @@ class TA:
     def __repr__(self):
         return self.name
 
-class ScheduleBot:
+# Class for ZhuLi, the bot that does the scheduling (filename for list of labs, filename for list of TA availability, filename for tests, filename for proctor/grade tally sheet)
+class ZhuLi:
     def __init__(self, lab_fname, TA_fname, test_fname, tally_fname, datadir = DEFAULT_DATA_DIR):
         print('\nScheduleBot Initialized')
         self.data_dir = datadir
@@ -78,6 +81,7 @@ class ScheduleBot:
         self.TA_list = self.CreateTAList(TA_fname)
         self.test_list = self.CreateTestList(test_fname)
 
+    # Creators
     def CreateLabList(self,fname):
         lab_list = []
         with open(self.data_dir+fname, newline='') as csvfile:
@@ -124,6 +128,7 @@ class ScheduleBot:
                 TA_hash[name] = {'proctor':proctor,'grade':grade}
         return TA_hash
 
+    # Schedulers
     def ScheduleLabs(self):
         for lab in self.lab_list:
             min_restrictivity = 100
@@ -160,14 +165,25 @@ class ScheduleBot:
                 test.graders.append(grader)
                 grader.grade+=1
 
+    # Writers
     def WriteTestSchedule(self):
         with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
             pgwriter = csv.writer(pgfile, delimiter=',')
-            pgwriter.writerow(['Class Number','Professor','Midterm Date', 'Proctors','','','','Graders','','','',''])
+            pgwriter.writerow(['Class Number','Section Number','Midterm Date', 'Proctors','','','','Graders','','','',''])
             for test in self.test_list:
                 row = [test.class_num,test.professor,test.date]+test.proctors+['']*(4-len(test.proctors))+test.graders
                 pgwriter.writerow(row)
 
+    def WriteLabSchedule(self):
+        with open(DEFAULT_DATA_DIR+'lab_schedule_sp19.csv', mode='w+') as labfile:
+            labwriter = csv.writer(labfile, delimiter=',')
+            labwriter.writerow(['Lab Type','Section Number','TA'])
+            for lab in self.lab_list:
+                row = [lab.lab_type,lab.section,lab.TA.name]
+                labwriter.writerow(row)
+
+
+    # Printers
     def PrintAllLabs(self):
         for lab in self.lab_list:
             lab.PrintLab()
@@ -235,13 +251,23 @@ TEST_SLOT_TO_TA_SLOT_DICT = {
 }
 
 if __name__ == '__main__':
-    print('\nStarting scheduling process')
+    print('\nStarting scheduling process\n')
+    lab_fname,TA_fname,test_fname,tally_fname = ['']*4
     CreateStudentSlotList()
-    sb = ScheduleBot('lab_list_sp19.csv','master_schedule_sp19.csv', 'proctor_grading_list_sp19.csv', 'proctor_grading_tally.csv')
+    if len(sys.argv)==2  and sys.argv[1] == 'default':
+        lab_fname = 'lab_list_sp19.csv'
+        TA_fname = 'master_schedule_sp19.csv'
+        test_fname = 'proctor_grading_list_sp19.csv'
+        tally_fname = 'proctor_grading_tally_sp19.csv'
+    else:
+        lab_fname = input('Please enter filename for lab list:')
+        TA_fname = input('Please enter filename for TA master schedule:')
+        test_fname = input('Please enter filename for test list:')
+        tally_fname = input('Please enter filename for tally list:')
+    sb = ZhuLi(lab_fname,TA_fname,test_fname,tally_fname)
     #sb.ScheduleLabs()
-    #sb.PrintAllLabs()
+    #sb.WriteLabSchedule()
     sb.ScheduleTests()
     sb.WriteTestSchedule()
-    #sb.PrintAllTests()
-    sb.PrintAllTAs()
+    #sb.PrintAllTAs()
     print('\nScheduling process finished')
