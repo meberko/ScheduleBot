@@ -180,7 +180,7 @@ class ScheduleBot:
         for ta in self.TA_list:
             proctor_this_sem = ta.proctor-self.TA_hash[ta.name]['proctor']
             grade_this_sem = ta.grade-self.TA_hash[ta.name]['grade']
-            print(ta.name,proctor_this_sem, grade_this_sem, round(proctor_this_sem+3*grade_this_sem,2))
+            print(ta.name,ta.proctor, ta.grade, round(ta.proctor+3*ta.grade,2))
 
 def CreateStudentSlotList():
     for i in range(TA_SLOT_RANGE):
