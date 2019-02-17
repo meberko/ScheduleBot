@@ -125,6 +125,7 @@ class ZhuLi:
                 name = row[0]
                 proctor = int(row[2])+int(row[4])+int(row[6])+int(row[8])
                 grade = int(row[3])+int(row[5])+int(row[7])+int(row[9])
+                #grade = float(row[3])+float(row[5])+float(row[7])+float(row[9])
                 TA_hash[name] = {'proctor':proctor,'grade':grade}
         return TA_hash
 
@@ -269,5 +270,5 @@ if __name__ == '__main__':
     #sb.WriteLabSchedule()
     sb.ScheduleTests()
     sb.WriteTestSchedule()
-    #sb.PrintAllTAs()
+    sb.PrintAllTAs()
     print('\nScheduling process finished')
