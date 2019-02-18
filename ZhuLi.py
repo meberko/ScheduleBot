@@ -56,17 +56,24 @@ class Test:
 
 # Class for TAs (namer of TA, list of free times, has lab boolean, number of times proctored, number of times graded)
 class TA:
-    def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0):
+    def __init__(self,name,free_list,has_lab=False, proctor=0, grade=0, total_num_students=0):
         self.name = name
         self.free_list = free_list
         self.has_lab = has_lab
         self.restrictivity = len(free_list)
         self.proctor = proctor
         self.grade = grade
+        self.total_num_students = total_num_students
 
     def CheckFreeList(self,slot,lab_or_test):
         slot_dict = (LAB_SLOT_TO_TA_SLOT_DICT, TEST_SLOT_TO_TA_SLOT_DICT)[lab_or_test=='test']
         return all(elem in self.free_list for elem in slot_dict[slot])
+
+    def GetAvgStudentsGraded(self):
+        if self.grade!=0:
+            return round(self.total_num_students/self.grade,1)
+        else:
+            return 0
 
     def __repr__(self):
         return self.name
@@ -101,7 +108,7 @@ class ZhuLi:
                 for j in range(len(row)):
                     if row[j]=='':
                         free_list.append(j)
-                TA_list.append(TA(name,free_list, proctor=self.TA_hash[name]['proctor'], grade=self.TA_hash[name]['grade']))
+                TA_list.append(TA(name,free_list, proctor=self.TA_hash[name]['proctor'], grade=self.TA_hash[name]['grade'], total_num_students=self.TA_hash[name]['total_num_students']))
         return TA_list
 
     def CreateTestList(self,fname):
@@ -123,11 +130,26 @@ class ZhuLi:
             reader = csv.reader(csvfile, delimiter = ',')
             for row in reader:
                 name = row[0]
-                proctor = int(row[2])+int(row[4])+int(row[6])+int(row[8])
-                grade = int(row[3])+int(row[5])+int(row[7])+int(row[9])
-                #grade = float(row[3])+float(row[5])+float(row[7])+float(row[9])
-                TA_hash[name] = {'proctor':proctor,'grade':grade}
+                proctor,grade,num_students=0,0,0
+                for i in range(4):
+                    proctor += int(row[2+3*i])
+                    grade += int(row[3+3*i])
+                    num_students += int(row[4+3*i])
+                TA_hash[name] = {'proctor':proctor,'grade':grade,'total_num_students':num_students}
         return TA_hash
+
+    # Getters
+    def GetAvgStudentsGraded(self):
+        return round(np.mean([ta.GetAvgStudentsGraded() for ta in self.TA_list]),2)
+
+    def GetStdStudentsGraded(self):
+        return round(np.std([ta.GetAvgStudentsGraded() for ta in self.TA_list]),2)
+
+    def GetAvgTestsGraded(self):
+        return round(np.mean([ta.total_num_students for ta in self.TA_list]),2)
+
+    def GetStdTestsGraded(self):
+        return round(np.std([ta.total_num_students for ta in self.TA_list]),2)
 
     # Schedulers
     def ScheduleLabs(self):
@@ -145,6 +167,7 @@ class ZhuLi:
     def ScheduleTests(self):
         for test in self.test_list:
             test_slot = test.slot
+            test_num_students = test.num_students
             for n in range(test.num_proctors):
                 proctor = TA('',[])
                 min_proctor_restrictivity = 100
@@ -157,14 +180,19 @@ class ZhuLi:
                 proctor.proctor+=1
             for n in range(test.num_graders):
                 grader = TA('',[])
-                min_grader_restrictivity = 100
+                min_std = 1000
                 for ta in self.TA_list:
-                    ta_restrictivity = ta.proctor+3*ta.grade
-                    if ta_restrictivity < min_grader_restrictivity and ta not in test.graders:
+                    ta.grade +=1
+                    ta.total_num_students += test_num_students
+                    curr_std = self.GetStdTestsGraded()
+                    if curr_std < min_std and ta not in test.graders:
                         grader = ta
-                        min_grader_restrictivity = ta_restrictivity
+                        min_std = curr_std
+                    ta.grade-=1
+                    ta.total_num_students -= test_num_students
                 test.graders.append(grader)
                 grader.grade+=1
+                grader.total_num_students += test_num_students
 
     # Writers
     def WriteTestSchedule(self):
@@ -183,7 +211,6 @@ class ZhuLi:
                 row = [lab.lab_type,lab.section,lab.TA.name]
                 labwriter.writerow(row)
 
-
     # Printers
     def PrintAllLabs(self):
         for lab in self.lab_list:
@@ -193,11 +220,14 @@ class ZhuLi:
         for test in self.test_list:
             test.PrintTest()
 
-    def PrintAllTAs(self):
+    def PrintAllTAs(self, this_sem=False):
         for ta in self.TA_list:
             proctor_this_sem = ta.proctor-self.TA_hash[ta.name]['proctor']
             grade_this_sem = ta.grade-self.TA_hash[ta.name]['grade']
-            print(ta.name,ta.proctor, ta.grade, round(ta.proctor+3*ta.grade,2))
+            if this_sem:
+                print(ta.name+'\n\t',proctor_this_sem,grade_this_sem,ta.total_num_students,ta.GetAvgStudentsGraded(),'\n')
+            else:
+                print(ta.name+'\n\t',ta.proctor,ta.grade,ta.total_num_students,ta.GetAvgStudentsGraded(),'\n')
 
 def CreateStudentSlotList():
     for i in range(TA_SLOT_RANGE):
@@ -259,7 +289,7 @@ if __name__ == '__main__':
         lab_fname = 'lab_list_sp19.csv'
         TA_fname = 'master_schedule_sp19.csv'
         test_fname = 'proctor_grading_list_sp19.csv'
-        tally_fname = 'proctor_grading_tally_sp19.csv'
+        tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
     else:
         lab_fname = input('Please enter filename for lab list:')
         TA_fname = input('Please enter filename for TA master schedule:')
@@ -270,5 +300,8 @@ if __name__ == '__main__':
     #sb.WriteLabSchedule()
     sb.ScheduleTests()
     sb.WriteTestSchedule()
-    sb.PrintAllTAs()
+    sb.PrintAllTAs(this_sem=True)
+    print()
+    print(sb.GetAvgTestsGraded())
+    print(sb.GetStdTestsGraded())
     print('\nScheduling process finished')
