@@ -65,8 +65,11 @@ class TA:
         self.grade = grade
         self.total_num_students = total_num_students
 
-    def CheckFreeList(self,slot,lab_or_test):
-        slot_dict = (LAB_SLOT_TO_TA_SLOT_DICT, TEST_SLOT_TO_TA_SLOT_DICT)[lab_or_test=='test']
+    def CheckFreeList(self,slot,lab_or_test,midterm=False):
+        if midterm:
+            slot_dict = (LAB_SLOT_TO_TA_SLOT_DICT, MIDTERM_SLOT_TO_TA_SLOT_DICT)[lab_or_test=='test']
+        else:
+            slot_dict = (LAB_SLOT_TO_TA_SLOT_DICT, FINAL_SLOT_TO_TA_SLOT_DICT)[lab_or_test=='test']
         return all(elem in self.free_list for elem in slot_dict[slot])
 
     def GetAvgStudentsGraded(self):
@@ -164,7 +167,7 @@ class ZhuLi:
             lab.TA = lab_TA
             lab_TA.has_lab = True
 
-    def ScheduleTests(self):
+    def ScheduleTests(self,midterm=False):
         for test in self.test_list:
             test_slot = test.slot
             test_num_students = test.num_students
@@ -173,7 +176,7 @@ class ZhuLi:
                 min_proctor_restrictivity = 100
                 #shuffle(self.TA_list)
                 for ta in self.TA_list:
-                    if ta.CheckFreeList(test_slot,'test') and ta.proctor < min_proctor_restrictivity and ta not in test.proctors:
+                    if ta.CheckFreeList(test_slot,'test',midterm) and ta.proctor < min_proctor_restrictivity and ta not in test.proctors:
                         proctor = ta
                         min_proctor_restrictivity = ta.proctor
                 test.proctors.append(proctor)
@@ -195,8 +198,8 @@ class ZhuLi:
                 grader.total_num_students += test_num_students
 
     # Writers
-    def WriteTestSchedule(self):
-        with open(DEFAULT_DATA_DIR+'proctor_grading_schedule_sp19.csv', mode='w+') as pgfile:
+    def WriteTestSchedule(self,sched_fname):
+        with open(DEFAULT_DATA_DIR+sched_fname, mode='w+') as pgfile:
             pgwriter = csv.writer(pgfile, delimiter=',')
             pgwriter.writerow(['Class Number','Section Number','Midterm Date', 'Proctors','','','','Graders','','','',''])
             for test in self.test_list:
@@ -225,9 +228,9 @@ class ZhuLi:
             proctor_this_sem = ta.proctor-self.TA_hash[ta.name]['proctor']
             grade_this_sem = ta.grade-self.TA_hash[ta.name]['grade']
             if this_sem:
-                print(ta.name+'\n\t',proctor_this_sem,grade_this_sem,ta.total_num_students,ta.GetAvgStudentsGraded(),'\n')
+                print(ta.name,proctor_this_sem,grade_this_sem,ta.total_num_students,ta.GetAvgStudentsGraded())
             else:
-                print(ta.name+'\n\t',ta.proctor,ta.grade,ta.total_num_students,ta.GetAvgStudentsGraded(),'\n')
+                print(ta.name,ta.proctor,ta.grade,ta.total_num_students,ta.GetAvgStudentsGraded())
 
 def CreateStudentSlotList():
     for i in range(TA_SLOT_RANGE):
@@ -253,7 +256,7 @@ LAB_SLOT_TO_TA_SLOT_DICT = {
     Slot('F','19:30','22:30'): [62,63,64],
 }
 
-TEST_SLOT_TO_TA_SLOT_DICT = {
+MIDTERM_SLOT_TO_TA_SLOT_DICT = {
     Slot('M', '10:10', '11:25'): [1,2],
     Slot('M', '11:40', '12:55'): [2,3],
     Slot('M', '13:10', '14:25'): [4,5],
@@ -281,14 +284,44 @@ TEST_SLOT_TO_TA_SLOT_DICT = {
     Slot('F', '18:10', '19:25'): [61,62],
 }
 
+FINAL_SLOT_TO_TA_SLOT_DICT = {
+    Slot('M', '9:00', '12:00'): [0,1,2],
+    Slot('M', '13:10', '16:00'): [4,5,6],
+    Slot('M', '16:10', '19:00'): [7,8,9],
+    Slot('M', '19:10', '22:00'): [10,11,12],
+    Slot('T', '9:00', '12:00'): [13,14,15],
+    Slot('T', '13:10', '16:00'): [17,18,19],
+    Slot('T', '16:10', '19:00'): [20,21,22],
+    Slot('T', '19:10', '22:00'): [23,24,25],
+    Slot('W', '9:00', '12:00'): [26,27,28],
+    Slot('W', '13:10', '16:00'): [30,31,32],
+    Slot('W', '16:10', '19:00'): [33,34,35],
+    Slot('W', '19:10', '22:00'): [36,37,38],
+    Slot('R', '9:00', '12:00'): [39,40,41],
+    Slot('R', '13:10', '16:00'): [43,44,45],
+    Slot('R', '16:10', '19:00'): [46,47,48],
+    Slot('R', '19:10', '22:00'): [49,50,51],
+    Slot('F', '9:00', '12:00'): [52,53,54],
+    Slot('F', '13:10', '16:00'): [56,57,58],
+    Slot('F', '16:10', '19:00'): [59,60,61],
+    Slot('F', '19:10', '22:00'): [62,63,64]
+}
+
 if __name__ == '__main__':
     print('\nStarting scheduling process\n')
     lab_fname,TA_fname,test_fname,tally_fname = ['']*4
     CreateStudentSlotList()
-    if len(sys.argv)==2  and sys.argv[1] == 'default':
+    if len(sys.argv)==2  and sys.argv[1] == 'midterm':
         lab_fname = 'lab_list_sp19.csv'
         TA_fname = 'master_schedule_sp19.csv'
-        test_fname = 'proctor_grading_list_sp19.csv'
+        test_fname = 'midterm_list_sp19.csv'
+        sched_fname = 'midterm_schedule_sp19.csv'
+        tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
+    if len(sys.argv)==2  and sys.argv[1] == 'final':
+        lab_fname = 'lab_list_sp19.csv'
+        TA_fname = 'master_schedule_sp19.csv'
+        test_fname = 'final_list_sp19.csv'
+        sched_fname = 'final_schedule_sp19.csv'
         tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
     else:
         lab_fname = input('Please enter filename for lab list:')
@@ -298,8 +331,8 @@ if __name__ == '__main__':
     sb = ZhuLi(lab_fname,TA_fname,test_fname,tally_fname)
     #sb.ScheduleLabs()
     #sb.WriteLabSchedule()
-    sb.ScheduleTests()
-    sb.WriteTestSchedule()
+    sb.ScheduleTests(midterm=False)
+    sb.WriteTestSchedule(sched_fname)
     sb.PrintAllTAs(this_sem=True)
     print()
     print(sb.GetAvgTestsGraded())
