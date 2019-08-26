@@ -81,8 +81,8 @@ class TA:
     def __repr__(self):
         return self.name
 
-# Class for ZhuLi, the bot that does the scheduling (filename for list of labs, filename for list of TA availability, filename for tests, filename for proctor/grade tally sheet)
-class ZhuLi:
+# Class for ScheduleBot, the bot that does the scheduling (filename for list of labs, filename for list of TA availability, filename for tests, filename for proctor/grade tally sheet)
+class ScheduleBot:
     def __init__(self, lab_fname, TA_fname, test_fname, tally_fname, datadir = DEFAULT_DATA_DIR):
         print('\nScheduleBot Initialized')
         self.data_dir = datadir
@@ -328,7 +328,7 @@ if __name__ == '__main__':
         TA_fname = input('Please enter filename for TA master schedule:')
         test_fname = input('Please enter filename for test list:')
         tally_fname = input('Please enter filename for tally list:')
-    sb = ZhuLi(lab_fname,TA_fname,test_fname,tally_fname)
+    sb = ScheduleBot(lab_fname,TA_fname,test_fname,tally_fname)
     #sb.ScheduleLabs()
     #sb.WriteLabSchedule()
     sb.ScheduleTests(midterm=False)
