@@ -261,26 +261,31 @@ MIDTERM_SLOT_TO_TA_SLOT_DICT = {
     Slot('M', '11:40', '12:55'): [2,3],
     Slot('M', '13:10', '14:25'): [4,5],
     Slot('M', '14:40', '15:55'): [5,6],
+    Slot('M', '16:10', '17:25'): [7,8],
     Slot('M', '18:10', '19:25'): [9,10],
     Slot('T', '10:10', '11:25'): [14,15],
     Slot('T', '11:40', '12:55'): [15,16],
     Slot('T', '13:10', '14:25'): [17,18],
     Slot('T', '14:40', '15:55'): [18,19],
+    Slot('T', '16:10', '17:25'): [20,21],
     Slot('T', '18:10', '19:25'): [22,23],
     Slot('W', '10:10', '11:25'): [27,28],
     Slot('W', '11:40', '12:55'): [28,29],
     Slot('W', '13:10', '14:25'): [30,31],
     Slot('W', '14:40', '15:55'): [31,32],
+    Slot('W', '16:10', '17:25'): [33,34],
     Slot('W', '18:10', '19:25'): [35,36],
     Slot('R', '10:10', '11:25'): [40,41],
     Slot('R', '11:40', '12:55'): [41,42],
     Slot('R', '13:10', '14:25'): [43,44],
     Slot('R', '14:40', '15:55'): [44,45],
+    Slot('R', '16:10', '17:25'): [46,47],
     Slot('R', '18:10', '19:25'): [48,49],
     Slot('F', '10:10', '11:25'): [53,54],
     Slot('F', '11:40', '12:55'): [54,55],
     Slot('F', '13:10', '14:25'): [56,57],
     Slot('F', '14:40', '15:55'): [57,58],
+    Slot('F', '16:10', '17:25'): [59,60],
     Slot('F', '18:10', '19:25'): [61,62],
 }
 
@@ -312,26 +317,27 @@ if __name__ == '__main__':
     lab_fname,TA_fname,test_fname,tally_fname = ['']*4
     CreateStudentSlotList()
     if len(sys.argv)==2  and sys.argv[1] == 'midterm':
-        lab_fname = 'lab_list_sp19.csv'
-        TA_fname = 'master_schedule_sp19.csv'
-        test_fname = 'midterm_list_sp19.csv'
-        sched_fname = 'midterm_schedule_sp19.csv'
-        tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
+        lab_fname = 'lab_list_fa19.csv'
+        TA_fname = 'master_schedule_fa19.csv'
+        test_fname = 'midterm_list_fa19.csv'
+        sched_fname = 'midterm_schedule_fa19.csv'
+        tally_fname = 'tally.csv'
+        midterm = True
     elif len(sys.argv)==2  and sys.argv[1] == 'final':
         lab_fname = 'lab_list_sp19.csv'
         TA_fname = 'master_schedule_sp19.csv'
         test_fname = 'final_list_sp19.csv'
         sched_fname = 'final_schedule_sp19.csv'
         tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
+        midterm = False
     else:
-        lab_fname = input('Please enter filename for lab list:')
-        TA_fname = input('Please enter filename for TA master schedule:')
-        test_fname = input('Please enter filename for test list:')
-        tally_fname = input('Please enter filename for tally list:')
+        lab_fname = input('Please enter filename for lab list: ')
+        TA_fname = input('Please enter filename for TA master schedule: ')
+        test_fname = input('Please enter filename for test list: ')
+        tally_fname = input('Please enter filename for tally list: ')
+        midterm = (input('Please enter "midterm" or "final": ') == 'midterm')
     sb = ScheduleBot(lab_fname,TA_fname,test_fname,tally_fname)
-    #sb.ScheduleLabs()
-    #sb.WriteLabSchedule()
-    sb.ScheduleTests(midterm=False)
+    sb.ScheduleTests(midterm=midterm)
     sb.WriteTestSchedule(sched_fname)
     sb.PrintAllTAs(this_sem=True)
     print()
