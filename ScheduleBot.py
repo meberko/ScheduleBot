@@ -317,7 +317,7 @@ if __name__ == '__main__':
         test_fname = 'midterm_list_sp19.csv'
         sched_fname = 'midterm_schedule_sp19.csv'
         tally_fname = 'proctor_grading_tally_num_students_sp19.csv'
-    if len(sys.argv)==2  and sys.argv[1] == 'final':
+    elif len(sys.argv)==2  and sys.argv[1] == 'final':
         lab_fname = 'lab_list_sp19.csv'
         TA_fname = 'master_schedule_sp19.csv'
         test_fname = 'final_list_sp19.csv'
